@@ -9,6 +9,8 @@
 - OllamaClient exposes both `chat()` (blocking) and `chat_stream()` (generator) methods
 - BaseAgent uses dataclass with default_factory for mutable fields (client, history)
 - Token estimation: ~4 chars per token (conservative for context window management)
+- File operations: use `utils.file_ops` (sandboxed to project_dir), not raw file I/O
+- FileOpsError raised for security violations (paths outside project dir)
 
 ---
 
@@ -52,4 +54,19 @@
   - Token estimation uses ~4 chars/token heuristic
   - On non-recoverable errors (connection, model not found), user message is removed from history
   - Use `clear_history()` to reset conversation, `get_history_summary()` for stats
+---
+
+## 2026-01-19 - US-004
+- What was implemented: File operations module with sandboxed read/write/list capabilities
+- Files changed:
+  - utils/__init__.py (new)
+  - utils/file_ops.py (new)
+- **Learnings for future iterations:**
+  - Use `read_file(path)`, `write_file(path, content)`, `list_files(directory, pattern)` from utils.file_ops
+  - All paths are sandboxed to `get_settings().project_dir` - paths outside are rejected with `FileOpsError`
+  - `read_file()` returns empty string for non-existent files (with warning log)
+  - Binary files (by extension) are skipped with warning, max file size is 1MB
+  - `write_file()` auto-creates parent directories
+  - `list_files()` supports glob patterns including recursive `**/*.py`
+  - Optional `project_dir` parameter overrides global settings for testing
 ---
