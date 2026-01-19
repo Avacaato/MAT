@@ -7,6 +7,8 @@
 - Type annotations required (strict mypy enabled in pyproject.toml)
 - Use `ChatCompletionMessageParam` from `openai.types.chat` for typed message lists
 - OllamaClient exposes both `chat()` (blocking) and `chat_stream()` (generator) methods
+- BaseAgent uses dataclass with default_factory for mutable fields (client, history)
+- Token estimation: ~4 chars per token (conservative for context window management)
 
 ---
 
@@ -35,4 +37,19 @@
   - Streaming uses generator pattern with `chat_stream()` yielding string chunks
   - `_list_available_models()` uses OpenAI `models.list()` endpoint for error messages
   - Conversation history format: `[{"role": "user"|"assistant", "content": "..."}]`
+---
+
+## 2026-01-19 - US-003
+- What was implemented: Base agent class for all MAT agents
+- Files changed:
+  - agents/__init__.py (new)
+  - agents/base.py (new)
+- **Learnings for future iterations:**
+  - BaseAgent is a dataclass with fields: name, role, system_prompt, client, conversation_history, max_context_tokens, max_retries
+  - Uses Message dataclass for history entries: `Message(role="user"|"assistant", content="...")`
+  - `chat(message)` handles history management, context truncation, and retries automatically
+  - Context window management: reserves 1024 tokens for system prompt + new message, truncates oldest messages first
+  - Token estimation uses ~4 chars/token heuristic
+  - On non-recoverable errors (connection, model not found), user message is removed from history
+  - Use `clear_history()` to reset conversation, `get_history_summary()` for stats
 ---
