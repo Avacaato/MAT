@@ -17,6 +17,8 @@
 - Specialized agents inherit from BaseAgent, add domain-specific state as dataclass fields
 - AgentOrchestrator coordinates agents via `execute_task(task_type, message)` or `execute_workflow(steps)`
 - TaskContext tracks context passing between agents; TaskResult wraps execution results
+- `ralph.BuildLoop` is the autonomous build loop - use `run_build_loop()` convenience function
+- PRDLoadError raised for prd.json validation errors; wrap json.JSONDecodeError with `from e`
 
 ---
 
@@ -308,4 +310,68 @@
   - `get_updated_stories()` returns stories with added edge case criteria
   - LLM response format: `EDGE: [desc] | CRITERION: [crit] | SEVERITY: [sev]` or `NONE_FOUND:`
   - EdgeCaseReport has `to_markdown()` for human-readable output, `get_by_category()` and `get_by_story()`
+---
+
+## 2026-01-19 - US-016
+- What was implemented: PRD to JSON converter workflow for Ralph build loop
+- Files changed:
+  - workflows/prd_to_json.py (new)
+  - workflows/__init__.py (updated - added PRDJson, PRDToJsonConverter, StoryData exports)
+- **Learnings for future iterations:**
+  - PRDToJsonConverter converts PRD markdown (tasks/prd.md) to prd.json format
+  - StoryData dataclass: id, title, description, acceptance_criteria, priority, passes (always false for new), notes
+  - PRDJson dataclass: project, branch_name, description, user_stories list
+  - `_normalize_branch_name(project)` converts project name to `ralph/kebab-case-name`
+  - `load_prd(path)` reads PRD markdown from file (default: tasks/prd.md)
+  - `parse(content, path)` parses markdown into PRDJson structure
+  - `save(path)` writes prd.json (default: prd.json in project root)
+  - `convert(input_path, output_path)` convenience method: load → parse → save
+  - `set_project_info(project_name, branch_name, description)` manually override project info
+  - `add_story(story)` adds StoryData or dict to PRD (passes always set to false)
+  - `validate()` returns list of errors (duplicate IDs, missing fields, etc.)
+  - Parses story headers: `### US-001: Title` or `## US-001 - Title`
+  - Extracts description from "As a user, I want X" format
+  - JSON uses camelCase keys: acceptanceCriteria, branchName, userStories
+---
+
+## 2026-01-19 - US-017
+- What was implemented: Git operations module for Ralph build loop
+- Files changed:
+  - utils/git_ops.py (new)
+  - utils/__init__.py (updated - added git_ops exports)
+- **Learnings for future iterations:**
+  - GitResult dataclass: success flag, message, output for standardized git command results
+  - GitOpsError exception for git operation errors
+  - `_run_git_command(args, cwd)` internal helper runs git with timeout and error handling
+  - `is_git_repo(path)` checks if directory is inside a git work tree
+  - `has_remote(remote_name, path)` checks if a remote (default: origin) is configured
+  - `git_add(files, path)` stages files; accepts string or list, "-A" for all
+  - `git_commit(message, path)` commits staged changes; returns failure if nothing staged
+  - `git_push(remote, branch, path)` pushes to remote; skips gracefully if no remote configured
+  - `git_status(path)` returns short status output
+  - `auto_commit_story(story_id, story_title, changed_files, path)` convenience for committing story progress
+  - `auto_commit_and_push(...)` combines commit + push; push failures don't fail overall operation
+  - All operations check is_git_repo first and log warnings for non-repo directories
+  - Push failures are logged but don't prevent build from continuing (graceful degradation)
+  - 60-second timeout on all git operations to prevent hangs
+---
+
+## 2026-01-19 - US-018
+- What was implemented: Ralph build loop core - autonomous build loop for implementing user stories
+- Files changed:
+  - ralph/__init__.py (new)
+  - ralph/build_loop.py (new)
+- **Learnings for future iterations:**
+  - BuildLoop coordinates Developer and QA agents for story implementation
+  - Data classes: BuildResult (final status), BuildLoopError/PRDLoadError (exceptions)
+  - `BuildLoop.load_prd()` loads prd.json with validation (missing userStories, malformed JSON)
+  - `BuildLoop.run()` is the main entry point for autonomous builds
+  - `run_build_loop(prd_path, max_retries)` is a convenience function
+  - Uses ScrumMasterAgent for tracking story status (PENDING/IN_PROGRESS/COMPLETED/FAILED)
+  - Retry logic: up to max_retries (default 3) attempts per story before marking failed
+  - `should_continue()` returns False when all remaining stories have failed (no actionable work)
+  - Auto-commits after each successful story using `auto_commit_story()`
+  - Progress tracked with `create_progress_tracker()` for visual feedback
+  - `mark_story_passed(story_id)` updates prd.json and saves immediately
+  - `get_remaining_count()` returns count of stories with passes=false
 ---
