@@ -96,19 +96,43 @@ def init(
     logger = get_logger()
 
     console.print("\n[bold blue]MAT Project Initialization[/bold blue]\n")
-    console.print(
-        "I'll ask you some questions to understand what you want to build.\n"
-    )
-
-    # Create PRD generator and start interview
-    prd_gen = PRDGenerator()
 
     try:
+        # Step 1: Get project name first
+        project_name = typer.prompt(
+            "What do you want to name this project? (e.g., 'habit-tracker', 'invoice-app')"
+        )
+        console.print()
+
+        # Step 2: Get initial project description
+        console.print(
+            "[cyan]Tell me about what you want to build.[/cyan]\n"
+            "Describe your idea in a few sentences - what is it, what problem "
+            "does it solve, who is it for?\n"
+        )
+        try:
+            initial_idea = typer.prompt("Your idea")
+        except (KeyboardInterrupt, EOFError):
+            console.print("\n[yellow]Cancelled.[/yellow]")
+            raise typer.Exit(1) from None
+
+        console.print()
+        console.print(
+            "[dim]Great! Now I'll ask a few follow-up questions to understand "
+            "your project better.[/dim]\n"
+        )
+
+        # Create PRD generator and start interview with context
+        prd_gen = PRDGenerator()
+
         # Start the discovery interview
         opening_message = prd_gen.start_discovery()
-        console.print(f"[cyan]PM Agent:[/cyan] {opening_message}\n")
 
-        # Run interview loop
+        # Feed the initial idea as the first response (for the "problem" question)
+        response = prd_gen.process_user_input(initial_idea)
+        console.print(f"[cyan]PM Agent:[/cyan] {response}\n")
+
+        # Run remaining interview loop
         while not prd_gen.is_discovery_complete():
             try:
                 user_input = typer.prompt("You")
@@ -119,13 +143,8 @@ def init(
             response = prd_gen.process_user_input(user_input)
             console.print(f"\n[cyan]PM Agent:[/cyan] {response}\n")
 
-        # Get project name
+        # Discovery complete
         console.print("\n[bold]Discovery complete![/bold]")
-        try:
-            project_name = typer.prompt("What would you like to name this project?")
-        except (KeyboardInterrupt, EOFError):
-            console.print("\n[yellow]Project naming cancelled.[/yellow]")
-            raise typer.Exit(1) from None
 
         # Generate PRD
         console.print("\n[dim]Generating PRD...[/dim]")
