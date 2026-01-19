@@ -1,0 +1,350 @@
+{
+  "project": "MAT",
+  "branchName": "ralph/mat-local-llm-framework",
+  "description": "MAT (Multi-Agent Toolkit) - A framework that adapts the BMAD agent-based methodology and Ralph's autonomous build loop to run entirely on local LLMs within a DGX environment",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Add configuration management",
+      "description": "As a user, I want to configure MAT via files and environment so that I can customize behavior.",
+      "acceptanceCriteria": [
+        "Create `config/settings.py`",
+        "Load from `.mat-config` file if exists",
+        "Support environment variables: MAT_OLLAMA_URL, MAT_MODEL, MAT_PROJECT_DIR",
+        "Provide sensible defaults (localhost:11434, codellama, current directory)",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-002",
+      "title": "Set up Ollama integration layer",
+      "description": "As a developer, I need a module that communicates with Ollama's OpenAI-compatible API so that all agents can use the local LLM.",
+      "acceptanceCriteria": [
+        "Create `llm/client.py` with OpenAI-compatible client pointing to Ollama",
+        "Use config from settings module for base URL and model name",
+        "Include retry logic with exponential backoff for failed requests",
+        "Add streaming response support for long generations",
+        "Handle connection refused error with clear message 'Ollama not running at {url}'",
+        "Handle model not found error with clear message listing available models",
+        "Validate response is not empty or malformed before returning",
+        "Typecheck passes"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-003",
+      "title": "Create base agent class",
+      "description": "As a developer, I need a base agent class that all specialized agents inherit from so that agent behavior is consistent.",
+      "acceptanceCriteria": [
+        "Create `agents/base.py` with BaseAgent class",
+        "BaseAgent has: name, role, system_prompt, and chat() method",
+        "chat() method sends messages to LLM client and returns response",
+        "Support conversation history management",
+        "Truncate conversation history when approaching context window limit",
+        "Handle malformed LLM responses gracefully with retry",
+        "Typecheck passes"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-004",
+      "title": "Add file operations for agents",
+      "description": "As a developer, I need agents to read and write project files so that they can implement code.",
+      "acceptanceCriteria": [
+        "Create `utils/file_ops.py`",
+        "read_file(path) returns file contents",
+        "write_file(path, content) writes to file",
+        "list_files(directory, pattern) returns matching files",
+        "Sandbox file operations to project directory (reject paths with '..' or absolute paths outside project)",
+        "Return empty string for non-existent files with warning log",
+        "Skip binary files with warning log",
+        "Limit file size to 1MB for reads",
+        "Create parent directories automatically on write",
+        "Typecheck passes"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-005",
+      "title": "Add progress tracking and logging",
+      "description": "As a user, I want to see build progress and logs so that I know what's happening.",
+      "acceptanceCriteria": [
+        "Create `utils/logger.py`",
+        "Log agent actions and decisions",
+        "Display progress bar for story completion",
+        "Save logs to `build.log`",
+        "Support verbose mode for debugging",
+        "Typecheck passes"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-006",
+      "title": "Implement Product Manager agent",
+      "description": "As a user, I want a PM agent that conducts discovery interviews and gathers requirements so that projects start with clear goals.",
+      "acceptanceCriteria": [
+        "Create `agents/pm.py` with ProductManagerAgent class",
+        "Agent conducts discovery interview (problem, users, features, success, scope)",
+        "Agent asks one question at a time and waits for response",
+        "Agent summarizes findings and confirms understanding",
+        "Typecheck passes"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-007",
+      "title": "Implement Architect agent",
+      "description": "As a user, I want an Architect agent that designs technical solutions so that projects have solid foundations.",
+      "acceptanceCriteria": [
+        "Create `agents/architect.py` with ArchitectAgent class",
+        "Agent proposes tech stack based on requirements",
+        "Agent identifies components, APIs, and data models",
+        "Agent documents architecture decisions",
+        "Typecheck passes"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-008",
+      "title": "Implement Developer agent",
+      "description": "As a user, I want a Developer agent that writes code for user stories so that implementation is automated.",
+      "acceptanceCriteria": [
+        "Create `agents/developer.py` with DeveloperAgent class",
+        "Agent reads user story and acceptance criteria",
+        "Agent generates code that satisfies criteria",
+        "Agent can read existing files for context using file_ops",
+        "Agent writes files to the project using file_ops",
+        "Typecheck passes"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-009",
+      "title": "Implement UX Designer agent",
+      "description": "As a user, I want a UX agent that designs user interfaces so that the product is usable.",
+      "acceptanceCriteria": [
+        "Create `agents/ux.py` with UXDesignerAgent class",
+        "Agent creates component specifications",
+        "Agent defines user flows and interactions",
+        "Agent follows accessibility best practices",
+        "Typecheck passes"
+      ],
+      "priority": 9,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-010",
+      "title": "Implement Scrum Master agent",
+      "description": "As a user, I want a Scrum Master agent that manages workflow and progress so that builds stay on track.",
+      "acceptanceCriteria": [
+        "Create `agents/scrum_master.py` with ScrumMasterAgent class",
+        "Agent tracks story completion status",
+        "Agent identifies blockers and suggests solutions",
+        "Agent manages the build queue",
+        "Typecheck passes"
+      ],
+      "priority": 10,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-011",
+      "title": "Implement QA Tester agent",
+      "description": "As a user, I want a QA agent that verifies implementations so that code quality is maintained.",
+      "acceptanceCriteria": [
+        "Create `agents/qa.py` with QATesterAgent class",
+        "Agent verifies acceptance criteria are met",
+        "Agent runs type checks and linting",
+        "Agent reports pass/fail status with details",
+        "Typecheck passes"
+      ],
+      "priority": 11,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-012",
+      "title": "Create agent orchestrator",
+      "description": "As a developer, I need an orchestrator that coordinates multiple agents so that they work together on tasks.",
+      "acceptanceCriteria": [
+        "Create `orchestrator/coordinator.py` with AgentOrchestrator class",
+        "Orchestrator routes tasks to appropriate agents",
+        "Orchestrator passes context between agents",
+        "Orchestrator manages conversation flow",
+        "Typecheck passes"
+      ],
+      "priority": 12,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-013",
+      "title": "Implement PRD generation workflow",
+      "description": "As a user, I want a workflow that generates PRDs from discovery interviews so that projects are well-documented.",
+      "acceptanceCriteria": [
+        "Create `workflows/prd_generator.py`",
+        "Workflow uses PM agent for discovery interview",
+        "Workflow generates structured PRD markdown",
+        "Workflow saves PRD to `tasks/prd.md`",
+        "PRD includes: overview, goals, user stories, requirements, non-goals",
+        "Typecheck passes"
+      ],
+      "priority": 13,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-014",
+      "title": "Implement story quality checker",
+      "description": "As a user, I want stories validated before building so that they are properly scoped.",
+      "acceptanceCriteria": [
+        "Create `workflows/story_quality.py`",
+        "Check stories are 1-2 lines max",
+        "Check stories have specific acceptance criteria",
+        "Check stories are ordered by dependencies",
+        "Split large stories automatically",
+        "Typecheck passes"
+      ],
+      "priority": 14,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-015",
+      "title": "Implement edge case analyzer",
+      "description": "As a user, I want edge cases identified and added to stories so that implementations are robust.",
+      "acceptanceCriteria": [
+        "Create `workflows/edge_cases.py`",
+        "Analyze PRD for input edge cases (empty, invalid, boundary)",
+        "Analyze for state edge cases (race conditions, concurrent access)",
+        "Add edge cases to acceptance criteria",
+        "Typecheck passes"
+      ],
+      "priority": 15,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-016",
+      "title": "Create prd.json converter",
+      "description": "As a developer, I need to convert PRD markdown to JSON format so that Ralph can process stories.",
+      "acceptanceCriteria": [
+        "Create `workflows/prd_to_json.py`",
+        "Parse user stories from markdown PRD",
+        "Generate JSON with project name, branch, and stories array",
+        "Each story has: id, description, acceptanceCriteria, priority, passes (false)",
+        "Save to `prd.json` in project root",
+        "Typecheck passes"
+      ],
+      "priority": 16,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-017",
+      "title": "Add git operations for Ralph",
+      "description": "As a user, I want Ralph to commit progress automatically so that work is saved.",
+      "acceptanceCriteria": [
+        "Create `utils/git_ops.py`",
+        "git_add(files) stages files",
+        "git_commit(message) creates commit",
+        "git_push() pushes to remote",
+        "Auto-commit after each story completion",
+        "Check if directory is git repo before operations, warn if not",
+        "Skip push if no remote configured (log warning, don't fail)",
+        "Handle push failures gracefully (log error, continue build)",
+        "Typecheck passes"
+      ],
+      "priority": 17,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-018",
+      "title": "Implement Ralph build loop core",
+      "description": "As a user, I want an autonomous build loop that iterates through stories so that implementation is hands-off.",
+      "acceptanceCriteria": [
+        "Create `ralph/build_loop.py`",
+        "Load stories from `prd.json`",
+        "For each story with passes=false: implement, verify, mark complete",
+        "Use Developer agent for implementation",
+        "Use QA agent for verification",
+        "Update prd.json after each story",
+        "Retry failed story up to 3 times before marking as failed",
+        "Handle missing or malformed prd.json with clear error message",
+        "Stop gracefully when all remaining stories have failed",
+        "Log failure reasons for debugging",
+        "Typecheck passes"
+      ],
+      "priority": 18,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-019",
+      "title": "Implement scale-adaptive intelligence",
+      "description": "As a user, I want MAT to adjust planning depth based on project complexity so that small tasks don't require enterprise planning.",
+      "acceptanceCriteria": [
+        "Create `orchestrator/scale_adapter.py`",
+        "Level 0: Bug fix - minimal planning, direct to Developer",
+        "Level 1: Small feature - PM + Developer",
+        "Level 2: Product - Full workflow (PM, Architect, Developer, QA)",
+        "Level 3-4: Enterprise - Extended workflows with compliance",
+        "Auto-detect level from project description",
+        "Typecheck passes"
+      ],
+      "priority": 19,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-020",
+      "title": "Create CLI entry point",
+      "description": "As a user, I want a CLI command to run MAT so that I can start workflows easily.",
+      "acceptanceCriteria": [
+        "Create `cli/main.py` with Typer",
+        "`mat init` - start new project with discovery interview",
+        "`mat build` - run Ralph build loop",
+        "`mat status` - show current progress",
+        "Typecheck passes"
+      ],
+      "priority": 20,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-021",
+      "title": "Create sample project for validation",
+      "description": "As a developer, I need a sample project to validate MAT works end-to-end so that we can prove success.",
+      "acceptanceCriteria": [
+        "Create `examples/todo-app/` sample project spec",
+        "Run MAT init to generate PRD",
+        "Run MAT build to implement stories",
+        "Verify all stories pass",
+        "Document results in `examples/todo-app/RESULTS.md`",
+        "Typecheck passes"
+      ],
+      "priority": 21,
+      "passes": false,
+      "notes": ""
+    }
+  ]
+}
