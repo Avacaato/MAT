@@ -5,6 +5,8 @@
 - Config loading priority: env vars > .mat-config file > defaults
 - Use dataclasses for Settings and similar config structures
 - Type annotations required (strict mypy enabled in pyproject.toml)
+- Use `ChatCompletionMessageParam` from `openai.types.chat` for typed message lists
+- OllamaClient exposes both `chat()` (blocking) and `chat_stream()` (generator) methods
 
 ---
 
@@ -19,4 +21,18 @@
   - Use `get_settings()` for global singleton access
   - Use `reload_settings()` to force reload of configuration
   - Environment variables: MAT_OLLAMA_URL, MAT_MODEL, MAT_PROJECT_DIR, MAT_VERBOSE, MAT_MAX_RETRIES, MAT_TIMEOUT
+---
+
+## 2026-01-19 - US-002
+- What was implemented: Ollama integration layer with OpenAI-compatible API
+- Files changed:
+  - llm/__init__.py (new)
+  - llm/client.py (new)
+- **Learnings for future iterations:**
+  - OllamaClient uses OpenAI SDK with `base_url="{ollama_url}/v1"` and dummy api_key="ollama"
+  - Custom exceptions: `OllamaConnectionError`, `OllamaModelNotFoundError`, `OllamaResponseError`
+  - Exponential backoff retry: `time.sleep(2**attempt)` for transient failures
+  - Streaming uses generator pattern with `chat_stream()` yielding string chunks
+  - `_list_available_models()` uses OpenAI `models.list()` endpoint for error messages
+  - Conversation history format: `[{"role": "user"|"assistant", "content": "..."}]`
 ---
