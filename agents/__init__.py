@@ -12,6 +12,12 @@ from agents.architect import (
     DataModel,
     TechStackProposal,
 )
+from agents.developer import (
+    CodeFile,
+    DeveloperAgent,
+    ImplementationPlan,
+    UserStory,
+)
 
 __all__ = [
     "BaseAgent",
@@ -23,4 +29,8 @@ __all__ = [
     "ComponentSpec",
     "DataModel",
     "TechStackProposal",
+    "DeveloperAgent",
+    "UserStory",
+    "CodeFile",
+    "ImplementationPlan",
 ]
