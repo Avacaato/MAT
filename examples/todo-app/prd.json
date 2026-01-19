@@ -1,0 +1,96 @@
+{
+  "project": "Todo App",
+  "branchName": "ralph/todo-app",
+  "description": "A simple command-line todo application that demonstrates MAT workflow validation",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Initialize todo storage",
+      "description": "As a user, I want my todos stored in a JSON file so that they persist between sessions.",
+      "acceptanceCriteria": [
+        "Create `todo_storage.py` module",
+        "Store todos in `todos.json` file",
+        "Support load and save operations",
+        "Handle missing file gracefully (create empty list)",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-002",
+      "title": "Add new todo item",
+      "description": "As a user, I want to add new todo items so that I can track what I need to do.",
+      "acceptanceCriteria": [
+        "Create `todo_commands.py` module",
+        "`add_todo(title)` adds new todo with unique ID",
+        "New todos have title, created timestamp, completed=False",
+        "Return the created todo item",
+        "Typecheck passes"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-003",
+      "title": "List all todos",
+      "description": "As a user, I want to see all my todos so that I know what tasks are pending.",
+      "acceptanceCriteria": [
+        "`list_todos()` returns all todos",
+        "Support filtering by completed status",
+        "Return empty list if no todos exist",
+        "Typecheck passes"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-004",
+      "title": "Mark todo as complete",
+      "description": "As a user, I want to mark todos as complete so that I can track my progress.",
+      "acceptanceCriteria": [
+        "`complete_todo(todo_id)` marks todo as completed",
+        "Set completed timestamp when marking complete",
+        "Return error if todo ID not found",
+        "Typecheck passes"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-005",
+      "title": "Delete todo item",
+      "description": "As a user, I want to delete todos so that I can remove items I no longer need.",
+      "acceptanceCriteria": [
+        "`delete_todo(todo_id)` removes todo from list",
+        "Return error if todo ID not found",
+        "Save changes after deletion",
+        "Typecheck passes"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-006",
+      "title": "Create CLI interface",
+      "description": "As a user, I want a command-line interface so that I can interact with my todos easily.",
+      "acceptanceCriteria": [
+        "Create `main.py` with CLI commands",
+        "`add <title>` - add new todo",
+        "`list [--all|--completed|--pending]` - list todos",
+        "`done <id>` - mark todo complete",
+        "`delete <id>` - delete todo",
+        "Display results in readable format",
+        "Typecheck passes"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": ""
+    }
+  ]
+}

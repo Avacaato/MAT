@@ -398,3 +398,36 @@
   - `adjust_workflow(base_level, add_agents, remove_agents)` allows customizing workflows
   - Level 0 (BUG_FIX) goes direct to Developer + QA; Level 2+ includes Architect, UX
 ---
+
+## 2026-01-19 - US-020
+- What was implemented: CLI entry point using Typer with init, build, and status commands
+- Files changed:
+  - cli/__init__.py (new)
+  - cli/main.py (new)
+  - config/__init__.py (updated - added reload_settings export)
+- **Learnings for future iterations:**
+  - CLI uses Typer for command-line interface with `app = typer.Typer(...)`
+  - `mat init` - starts discovery interview using PRDGenerator, generates tasks/prd.md
+  - `mat build` - runs BuildLoop from ralph module on prd.json
+  - `mat status` - displays progress table using rich.table.Table
+  - Project scripts in pyproject.toml: `mat = "cli.main:app"`
+  - Use `reload_settings()` to force reload config after setting env vars
+  - Rich console for styled output: `console.print("[bold blue]...[/bold blue]")`
+  - Typer.Exit(1) with `from None` or `from e` to satisfy linting rules (B904)
+  - Options use `typer.Option(default, "--flag", "-f", help="...")`
+---
+
+## 2026-01-19 - US-021
+- What was implemented: Sample project for MAT validation with todo-app example
+- Files changed:
+  - examples/todo-app/PROJECT-SPEC.md (new) - project overview and usage instructions
+  - examples/todo-app/tasks/prd.md (new) - human-readable PRD with 6 user stories
+  - examples/todo-app/prd.json (new) - machine-readable PRD for build loop
+  - examples/todo-app/RESULTS.md (new) - validation results documentation
+- **Learnings for future iterations:**
+  - Sample projects go in `examples/` directory with full PRD structure
+  - Validation includes typecheck (28 files pass strict mypy)
+  - Sample projects should be simple enough to demonstrate workflow but realistic
+  - RESULTS.md documents what was validated and outcomes
+  - Todo app example has 6 stories in proper dependency order
+---
