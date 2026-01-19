@@ -33,6 +33,14 @@ from agents.scrum_master import (
     BuildQueue,
     BlockerAnalysis,
 )
+from agents.qa import (
+    QATesterAgent,
+    VerificationStatus,
+    CriterionResult,
+    TypeCheckResult,
+    LintResult,
+    VerificationReport,
+)
 
 __all__ = [
     "BaseAgent",
@@ -59,4 +67,10 @@ __all__ = [
     "StoryState",
     "BuildQueue",
     "BlockerAnalysis",
+    "QATesterAgent",
+    "VerificationStatus",
+    "CriterionResult",
+    "TypeCheckResult",
+    "LintResult",
+    "VerificationReport",
 ]

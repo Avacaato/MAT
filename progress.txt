@@ -173,3 +173,48 @@
   - `reset_ux_document()` - clears state and history for fresh design
   - System prompt emphasizes accessibility (WCAG 2.1 AA), keyboard navigation, screen readers
 ---
+
+## 2026-01-19 - US-010
+- What was implemented: Scrum Master agent for workflow management
+- Files changed:
+  - agents/scrum_master.py (new)
+  - agents/__init__.py (updated - added ScrumMasterAgent exports)
+- **Learnings for future iterations:**
+  - ScrumMasterAgent inherits from BaseAgent, adds BuildQueue for state
+  - StoryStatus enum: PENDING, IN_PROGRESS, BLOCKED, COMPLETED, FAILED
+  - StoryState dataclass: tracks individual story with status, attempt count, failure reasons, blockers
+  - StoryState.from_prd_story(dict) creates state from prd.json format
+  - BuildQueue dataclass: manages list of stories, provides get_next_story(), get_summary()
+  - BlockerAnalysis dataclass: severity, suggested_solutions, requires_human_intervention
+  - `load_stories(prd_data)` - loads from prd.json dict into build queue
+  - `get_next_story()` - returns next PENDING story, marks it IN_PROGRESS, increments attempt count
+  - `mark_story_completed/failed/blocked(story_id)` - updates story status
+  - `retry_story(story_id)` - resets FAILED/BLOCKED story to PENDING for retry
+  - `analyze_blocker(story_id, error_context)` - uses LLM to analyze blocker and suggest solutions
+  - `get_status_report()` - generates human-readable build status report
+  - `should_continue_build(max_retries)` - determines if actionable stories remain
+  - `get_build_summary()` - returns machine-readable dict with stats and story states
+---
+
+## 2026-01-19 - US-011
+- What was implemented: QA Tester agent for verifying implementations
+- Files changed:
+  - agents/qa.py (new)
+  - agents/__init__.py (updated - added QATesterAgent exports)
+- **Learnings for future iterations:**
+  - QATesterAgent inherits from BaseAgent, adds current_story and changed_files state
+  - VerificationStatus enum: PASS, FAIL, SKIP, ERROR
+  - CriterionResult dataclass: tracks verification of individual acceptance criterion
+  - TypeCheckResult dataclass: wraps mypy results with passed flag, error count, error list
+  - LintResult dataclass: wraps ruff results with passed flag, warning/error counts
+  - VerificationReport dataclass: complete story verification with criteria, type check, lint results
+  - `set_story(story, changed_files)` - sets story to verify and clears history
+  - `verify_criterion(criterion, file_contents)` - uses LLM to verify single criterion
+  - `run_type_check(path)` - runs mypy via subprocess, returns TypeCheckResult
+  - `run_lint_check(path)` - runs ruff via subprocess, returns LintResult
+  - `verify_story(story, changed_files)` - orchestrates full verification: criteria + type check + lint
+  - `quick_verify()` - runs only type check and lint (no LLM verification)
+  - `suggest_fixes(report)` - uses LLM to generate fix suggestions for failures
+  - VerificationReport has `to_markdown()` for human-readable output
+  - Type check skipped if mypy not installed (doesn't fail), lint skipped if ruff not installed
+---
