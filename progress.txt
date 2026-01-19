@@ -19,6 +19,8 @@
 - TaskContext tracks context passing between agents; TaskResult wraps execution results
 - `ralph.BuildLoop` is the autonomous build loop - use `run_build_loop()` convenience function
 - PRDLoadError raised for prd.json validation errors; wrap json.JSONDecodeError with `from e`
+- ScaleAdapter auto-detects project complexity (BUG_FIX → ENTERPRISE_PLUS), use `assess_complexity(description)`
+- LEVEL_WORKFLOWS maps ComplexityLevel to recommended agent workflows; LEVEL_AGENTS maps to agent lists
 
 ---
 
@@ -374,4 +376,25 @@
   - Progress tracked with `create_progress_tracker()` for visual feedback
   - `mark_story_passed(story_id)` updates prd.json and saves immediately
   - `get_remaining_count()` returns count of stories with passes=false
+---
+
+## 2026-01-19 - US-019
+- What was implemented: Scale-adaptive intelligence module for complexity-aware planning
+- Files changed:
+  - orchestrator/scale_adapter.py (new)
+  - orchestrator/__init__.py (updated - added ScaleAdapter, ScaleAssessment, ComplexityLevel exports)
+  - .gitignore (new - exclude pycache files)
+- **Learnings for future iterations:**
+  - ComplexityLevel enum: BUG_FIX (0), SMALL_FEATURE (1), PRODUCT (2), ENTERPRISE (3), ENTERPRISE_PLUS (4)
+  - ScaleAssessment dataclass: level, confidence, reasoning, indicators, recommended_agents, recommended_workflow
+  - ScaleAdapter inherits BaseAgent, adds `last_assessment` state
+  - `assess_complexity(description, use_llm=True)` analyzes project description, returns ScaleAssessment
+  - `auto_detect_level(description)` convenience method returns just ComplexityLevel
+  - `_keyword_based_assessment()` for quick non-LLM analysis, `_llm_based_assessment()` for accuracy
+  - LEVEL_WORKFLOWS dict maps levels to list of (AgentType, task_description) tuples
+  - LEVEL_AGENTS dict maps levels to list of recommended agents
+  - LEVEL_KEYWORDS dict maps levels to indicator keywords for keyword-based detection
+  - `get_workflow_for_level(level)` and `get_agents_for_level(level)` retrieve recommendations
+  - `adjust_workflow(base_level, add_agents, remove_agents)` allows customizing workflows
+  - Level 0 (BUG_FIX) goes direct to Developer + QA; Level 2+ includes Architect, UX
 ---
