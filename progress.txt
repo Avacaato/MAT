@@ -15,6 +15,8 @@
 - `log_agent_action()` and `log_agent_decision()` for consistent agent output formatting
 - `StoryProgress` with context manager for build progress bars
 - Specialized agents inherit from BaseAgent, add domain-specific state as dataclass fields
+- AgentOrchestrator coordinates agents via `execute_task(task_type, message)` or `execute_workflow(steps)`
+- TaskContext tracks context passing between agents; TaskResult wraps execution results
 
 ---
 
@@ -217,4 +219,49 @@
   - `suggest_fixes(report)` - uses LLM to generate fix suggestions for failures
   - VerificationReport has `to_markdown()` for human-readable output
   - Type check skipped if mypy not installed (doesn't fail), lint skipped if ruff not installed
+---
+
+## 2026-01-19 - US-012
+- What was implemented: Agent orchestrator for coordinating multiple agents
+- Files changed:
+  - orchestrator/__init__.py (new)
+  - orchestrator/coordinator.py (new)
+- **Learnings for future iterations:**
+  - AgentOrchestrator inherits from BaseAgent, holds instances of all specialized agents
+  - AgentType enum: PRODUCT_MANAGER, ARCHITECT, DEVELOPER, UX_DESIGNER, SCRUM_MASTER, QA_TESTER
+  - TaskContext dataclass: tracks task_type, description, data dict, previous_agent, history
+  - TaskResult dataclass: success flag, message, data dict, errors list
+  - TASK_ROUTING dict maps task types to agent lists (e.g., "discovery" → [PM], "full_build" → [PM, ARCH, UX, DEV, QA])
+  - `get_agent(agent_type)` retrieves agent instance by type
+  - `determine_agent_for_task(task_type)` routes tasks using TASK_ROUTING or LLM fallback
+  - `create_context(task_type, description)` creates new TaskContext for tracking
+  - `pass_context_to_agent(agent_type, context)` formats context for agent handoff
+  - `route_to_agent(agent_type, message, context)` sends message to agent with context
+  - `execute_task(task_type, message)` routes to appropriate agents and returns TaskResult
+  - `execute_workflow(workflow_steps)` executes list of (agent_type, message) tuples in sequence
+  - `implement_story(story_data)` convenience method: Developer → QA with context passing
+  - QA verify_story expects dict (story_data), not UserStory instance - use story_data directly
+  - VerificationReport uses `overall_passed` not `passed` attribute
+  - `get_status()` returns formatted status with all agent states
+  - `reset()` clears all agent histories and current context
+---
+
+## 2026-01-19 - US-013
+- What was implemented: PRD generation workflow using PM agent
+- Files changed:
+  - workflows/__init__.py (new)
+  - workflows/prd_generator.py (new)
+- **Learnings for future iterations:**
+  - PRDGenerator orchestrates discovery interview and PRD generation from findings
+  - UserStorySpec dataclass: id, title, description, acceptance_criteria
+  - PRDDocument dataclass: project_name, overview, goals, user_stories, requirements, non_goals
+  - `start_discovery()` begins PM agent interview, returns opening question
+  - `process_user_input(response)` handles interview flow, returns next question or summary
+  - `is_discovery_complete()` checks if all phases done
+  - `generate_prd(project_name)` uses LLM to create structured PRD from findings
+  - `save_prd(path)` writes PRD markdown to tasks/prd.md (default)
+  - `run_full_workflow(responses, project_name)` convenience for automation/testing
+  - PRD generation uses structured prompt with markers (PROJECT_NAME:, GOALS:, USER_STORIES:, etc.)
+  - Parser uses nested function `save_current_story()` for clean state management
+  - Always includes "Typecheck passes" in generated story criteria
 ---
