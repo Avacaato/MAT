@@ -265,3 +265,47 @@
   - Parser uses nested function `save_current_story()` for clean state management
   - Always includes "Typecheck passes" in generated story criteria
 ---
+
+## 2026-01-19 - US-014
+- What was implemented: Story quality checker workflow for validating user stories
+- Files changed:
+  - workflows/story_quality.py (new)
+  - workflows/__init__.py (updated - added StoryQualityChecker exports)
+- **Learnings for future iterations:**
+  - StoryQualityChecker validates stories before building with configurable checks
+  - Data classes: QualityIssue, StorySpec, QualityReport
+  - `load_stories(stories_data)` loads from list of dicts (prd.json format)
+  - `check_all_stories()` runs length, criteria, and scope checks, returns QualityReport
+  - `check_dependency_order()` uses LLM to analyze story dependencies
+  - `split_story(story_id)` uses LLM to split large stories into smaller ones
+  - `auto_fix_stories()` adds missing typecheck criteria and splits large stories
+  - `run_full_check(stories_data, auto_fix, check_dependencies)` orchestrates full workflow
+  - Issue types: length, criteria, scope, dependency
+  - Constants: MAX_DESCRIPTION_LINES = 2, MIN_CRITERIA_COUNT = 2
+  - Checks for vague words: "should work", "must be good", "etc", "and more"
+  - QualityReport has `to_markdown()` for human-readable output
+  - `get_fixed_stories_as_dicts()` returns stories in prd.json format
+---
+
+## 2026-01-19 - US-015
+- What was implemented: Edge case analyzer workflow for identifying edge cases in user stories
+- Files changed:
+  - workflows/edge_cases.py (new)
+  - workflows/__init__.py (updated - added EdgeCase, EdgeCaseAnalyzer, EdgeCaseReport exports)
+- **Learnings for future iterations:**
+  - EdgeCaseAnalyzer analyzes stories for four categories: input, state, error, security
+  - EdgeCase dataclass: story_id, category, description, criterion, severity
+  - EdgeCaseReport tracks: story_count, edge_cases list, updated_criteria dict
+  - `load_stories(stories_data)` loads from list of dicts (prd.json format)
+  - `analyze_input_edge_cases(story)` - empty values, boundaries, invalid formats, special chars
+  - `analyze_state_edge_cases(story)` - race conditions, concurrent access, stale data
+  - `analyze_error_edge_cases(story)` - network failures, validation errors, resource exhaustion
+  - `analyze_security_edge_cases(story)` - injection, auth bypass, data exposure
+  - `analyze_story(story)` runs all four category analyses on a single story
+  - `analyze_all_stories()` analyzes all loaded stories, returns EdgeCaseReport
+  - `add_edge_cases_to_criteria(max_per_story, min_severity)` adds findings to acceptance criteria
+  - `run_full_analysis(stories_data, add_to_criteria, max_per_story, min_severity)` orchestrates full workflow
+  - `get_updated_stories()` returns stories with added edge case criteria
+  - LLM response format: `EDGE: [desc] | CRITERION: [crit] | SEVERITY: [sev]` or `NONE_FOUND:`
+  - EdgeCaseReport has `to_markdown()` for human-readable output, `get_by_category()` and `get_by_story()`
+---
