@@ -14,6 +14,7 @@
 - Logging: use `utils.logger` functions, not raw print() or logging module directly
 - `log_agent_action()` and `log_agent_decision()` for consistent agent output formatting
 - `StoryProgress` with context manager for build progress bars
+- Specialized agents inherit from BaseAgent, add domain-specific state as dataclass fields
 
 ---
 
@@ -90,4 +91,24 @@
   - `log_build_start()` and `log_build_complete()` bracket the build with formatted output
   - Logs always go to both console (with rich formatting) and `build.log` file (plain text)
   - File logging is DEBUG level (verbose), console respects verbose setting
+---
+
+## 2026-01-19 - US-006
+- What was implemented: Product Manager agent for discovery interviews
+- Files changed:
+  - agents/pm.py (new)
+  - agents/__init__.py (updated - added ProductManagerAgent exports)
+- **Learnings for future iterations:**
+  - ProductManagerAgent inherits from BaseAgent and adds interview-specific logic
+  - Uses DiscoveryPhase enum to track interview state: PROBLEM → USERS → FEATURES → SUCCESS → SCOPE → SUMMARY → COMPLETE
+  - DiscoveryFindings dataclass stores responses for each phase
+  - `start_interview()` resets state and returns opening message with first question
+  - `process_response(user_response)` handles the interview flow:
+    - Stores user response for current phase
+    - Uses LLM to check if clarification is needed
+    - Advances to next phase or asks follow-up question
+  - `generate_summary()` uses LLM to create structured summary from findings
+  - `get_findings()` returns dict of collected responses
+  - `is_interview_complete()` checks if all phases done
+  - Discovery questions stored in DISCOVERY_QUESTIONS dict, not hardcoded in methods
 ---
