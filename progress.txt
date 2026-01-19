@@ -2,6 +2,21 @@
 ---
 
 ## Codebase Patterns
-(Patterns will be added here as the project is built)
+- Config loading priority: env vars > .mat-config file > defaults
+- Use dataclasses for Settings and similar config structures
+- Type annotations required (strict mypy enabled in pyproject.toml)
 
+---
+
+## 2026-01-19 - US-001
+- What was implemented: Configuration management module
+- Files changed:
+  - config/__init__.py (new)
+  - config/settings.py (new)
+  - pyproject.toml (new)
+- **Learnings for future iterations:**
+  - Settings class supports loading from env vars, .mat-config file, or defaults
+  - Use `get_settings()` for global singleton access
+  - Use `reload_settings()` to force reload of configuration
+  - Environment variables: MAT_OLLAMA_URL, MAT_MODEL, MAT_PROJECT_DIR, MAT_VERBOSE, MAT_MAX_RETRIES, MAT_TIMEOUT
 ---

@@ -87,8 +87,8 @@ for i in $(seq 1 $MAX_ITERATIONS); do
   echo "  Ralph Iteration $i of $MAX_ITERATIONS"
   echo "═══════════════════════════════════════════════════════"
 
-  # Run claude with the ralph prompt
-  OUTPUT=$(cat "$SCRIPT_DIR/prompts/ralph-agent.md" | claude --dangerously-skip-permissions 2>&1 | tee /dev/stderr) || true
+  # Run claude with the ralph prompt (using -p for non-interactive/print mode)
+  OUTPUT=$(cat "$SCRIPT_DIR/prompts/ralph-agent.md" | claude -p --dangerously-skip-permissions 2>&1 | tee /dev/stderr) || true
 
   # Check for completion signal
   if echo "$OUTPUT" | grep -q "<promise>COMPLETE</promise>"; then
