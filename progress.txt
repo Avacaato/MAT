@@ -112,3 +112,64 @@
   - `is_interview_complete()` checks if all phases done
   - Discovery questions stored in DISCOVERY_QUESTIONS dict, not hardcoded in methods
 ---
+
+## 2026-01-19 - US-007
+- What was implemented: Architect agent for technical solution design
+- Files changed:
+  - agents/architect.py (new)
+  - agents/__init__.py (updated - added ArchitectAgent exports)
+- **Learnings for future iterations:**
+  - ArchitectAgent inherits from BaseAgent, adds ArchitectureDocument for state
+  - Data classes: TechStackProposal, ComponentSpec, DataModel, ArchitectureDocument
+  - `propose_tech_stack(requirements)` - parses LLM output into TechStackProposal
+  - `identify_components(requirements)` - extracts components from LLM response (separated by ---)
+  - `design_data_models(requirements)` - extracts models with fields and relationships
+  - `design_api(requirements)` - extracts API endpoints (METHOD /path format)
+  - `create_full_architecture(requirements)` - orchestrates full design process
+  - `document_decision(decision, rationale)` - manually record architecture decisions
+  - `get_architecture_markdown()` - converts current architecture to markdown
+  - LLM output parsing: lines start with KEY:, blocks separated by ---
+  - All dataclasses have `to_dict()` and relevant `to_markdown()` methods
+---
+
+## 2026-01-19 - US-008
+- What was implemented: Developer agent for implementing user stories
+- Files changed:
+  - agents/developer.py (new)
+  - agents/__init__.py (updated - added DeveloperAgent exports)
+- **Learnings for future iterations:**
+  - DeveloperAgent inherits from BaseAgent, adds current_story and context_files state
+  - UserStory dataclass with `from_dict()` to load from prd.json format and `to_prompt()` for LLM
+  - CodeFile dataclass represents generated code: path and content
+  - ImplementationPlan dataclass: files_to_create, files_to_modify, approach
+  - `set_story(story)` - sets story and clears history/context for fresh implementation
+  - `read_context_file(path)` and `read_context_files(paths)` - load existing code for context
+  - `find_related_files(pattern)` - uses `list_files()` to discover project files
+  - `analyze_story()` - uses LLM to create ImplementationPlan with files and approach
+  - `generate_code(file_path)` - generates new file content with story + context
+  - `modify_code(file_path, existing)` - modifies existing file to satisfy story
+  - `_extract_code(response)` - strips markdown code blocks from LLM output
+  - `write_code_file(code_file)` - uses `write_file()` to persist generated code
+  - `implement_story(story)` - orchestrates full implementation: plan → read context → generate → write
+  - Agent prompts emphasize following existing patterns and keeping changes focused
+---
+
+## 2026-01-19 - US-009
+- What was implemented: UX Designer agent for user interface design
+- Files changed:
+  - agents/ux.py (new)
+  - agents/__init__.py (updated - added UXDesignerAgent exports, aliased ComponentSpec to avoid collision)
+- **Learnings for future iterations:**
+  - UXDesignerAgent inherits from BaseAgent, adds UXDocument for state
+  - Data classes: ComponentSpec, UserFlowStep, UserFlow, InteractionSpec, UXDocument
+  - Note: Both architect.py and ux.py have `ComponentSpec` - imported as `ArchComponentSpec` and `UXComponentSpec` in __init__.py
+  - `create_component_spec(name, requirements)` - parses component specs with props, accessibility, states
+  - `define_user_flow(name, requirements)` - parses flows with numbered steps (ACTION | RESULT format)
+  - `define_interactions(context)` - parses interaction specs (TRIGGER, ACTION, FEEDBACK, A11Y)
+  - `analyze_accessibility(requirements)` - generates WCAG 2.1 AA recommendations
+  - `add_accessibility_note(note)` - manually add a11y notes
+  - `create_full_ux_design(requirements)` - orchestrates overview, accessibility, flows, interactions
+  - `get_ux_markdown()` - converts current UX document to markdown
+  - `reset_ux_document()` - clears state and history for fresh design
+  - System prompt emphasizes accessibility (WCAG 2.1 AA), keyboard navigation, screen readers
+---

@@ -8,7 +8,7 @@ from agents.pm import DiscoveryFindings, DiscoveryPhase, ProductManagerAgent
 from agents.architect import (
     ArchitectAgent,
     ArchitectureDocument,
-    ComponentSpec,
+    ComponentSpec as ArchComponentSpec,
     DataModel,
     TechStackProposal,
 )
@@ -18,6 +18,14 @@ from agents.developer import (
     ImplementationPlan,
     UserStory,
 )
+from agents.ux import (
+    UXDesignerAgent,
+    UXDocument,
+    ComponentSpec as UXComponentSpec,
+    UserFlow,
+    UserFlowStep,
+    InteractionSpec,
+)
 
 __all__ = [
     "BaseAgent",
@@ -26,11 +34,17 @@ __all__ = [
     "DiscoveryFindings",
     "ArchitectAgent",
     "ArchitectureDocument",
-    "ComponentSpec",
+    "ArchComponentSpec",
     "DataModel",
     "TechStackProposal",
     "DeveloperAgent",
     "UserStory",
     "CodeFile",
     "ImplementationPlan",
+    "UXDesignerAgent",
+    "UXDocument",
+    "UXComponentSpec",
+    "UserFlow",
+    "UserFlowStep",
+    "InteractionSpec",
 ]
