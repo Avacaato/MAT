@@ -11,6 +11,9 @@
 - Token estimation: ~4 chars per token (conservative for context window management)
 - File operations: use `utils.file_ops` (sandboxed to project_dir), not raw file I/O
 - FileOpsError raised for security violations (paths outside project dir)
+- Logging: use `utils.logger` functions, not raw print() or logging module directly
+- `log_agent_action()` and `log_agent_decision()` for consistent agent output formatting
+- `StoryProgress` with context manager for build progress bars
 
 ---
 
@@ -69,4 +72,22 @@
   - `write_file()` auto-creates parent directories
   - `list_files()` supports glob patterns including recursive `**/*.py`
   - Optional `project_dir` parameter overrides global settings for testing
+---
+
+## 2026-01-19 - US-005
+- What was implemented: Progress tracking and logging utilities
+- Files changed:
+  - utils/logger.py (new)
+  - utils/__init__.py (updated - added logger exports)
+- **Learnings for future iterations:**
+  - Use `setup_logging(verbose=True/False)` to configure logging once at startup
+  - `get_logger()` returns the MAT logger, auto-initializes if needed
+  - `log_agent_action(agent_name, action, details)` for uniform agent output
+  - `log_agent_decision(agent_name, decision, reasoning)` logs decisions with optional debug reasoning
+  - `log_verbose(message, **kwargs)` only logs in verbose mode (DEBUG level)
+  - `StoryProgress` is a context manager: `with create_progress_tracker(total, completed) as progress:`
+  - Use `progress.begin_story()`, `progress.complete_story()`, `progress.fail_story()` to update
+  - `log_build_start()` and `log_build_complete()` bracket the build with formatted output
+  - Logs always go to both console (with rich formatting) and `build.log` file (plain text)
+  - File logging is DEBUG level (verbose), console respects verbose setting
 ---
