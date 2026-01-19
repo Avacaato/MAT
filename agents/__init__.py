@@ -26,6 +26,13 @@ from agents.ux import (
     UserFlowStep,
     InteractionSpec,
 )
+from agents.scrum_master import (
+    ScrumMasterAgent,
+    StoryStatus,
+    StoryState,
+    BuildQueue,
+    BlockerAnalysis,
+)
 
 __all__ = [
     "BaseAgent",
@@ -47,4 +54,9 @@ __all__ = [
     "UserFlow",
     "UserFlowStep",
     "InteractionSpec",
+    "ScrumMasterAgent",
+    "StoryStatus",
+    "StoryState",
+    "BuildQueue",
+    "BlockerAnalysis",
 ]
