@@ -9,6 +9,11 @@ from workflows.edge_cases import (
     EdgeCaseReport,
 )
 from workflows.prd_generator import PRDDocument, PRDGenerator
+from workflows.prd_to_json import (
+    PRDJson,
+    PRDToJsonConverter,
+    StoryData,
+)
 from workflows.story_quality import (
     QualityIssue,
     QualityReport,
@@ -26,4 +31,7 @@ __all__ = [
     "EdgeCase",
     "EdgeCaseAnalyzer",
     "EdgeCaseReport",
+    "PRDJson",
+    "PRDToJsonConverter",
+    "StoryData",
 ]
