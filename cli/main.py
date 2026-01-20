@@ -251,7 +251,9 @@ def build(
             for error in result.errors:
                 console.print(f"  - {error}")
 
-        raise typer.Exit(0 if result.success else 1)
+        # Exit with appropriate code (don't raise, just return for success)
+        if not result.success:
+            raise typer.Exit(1)
 
     except BuildLoopError as e:
         logger.error(f"Build loop error: {e}")
@@ -260,6 +262,9 @@ def build(
     except KeyboardInterrupt:
         console.print("\n[yellow]Build interrupted.[/yellow]")
         raise typer.Exit(1) from None
+    except typer.Exit:
+        # Re-raise typer exits (don't catch them as generic exceptions)
+        raise
     except Exception as e:
         logger.error(f"Unexpected error: {e}")
         console.print(f"\n[red]Error:[/red] {e}")
