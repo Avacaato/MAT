@@ -18,7 +18,7 @@ from rich.table import Table
 from config import get_settings, reload_settings
 from ralph import BuildLoop, BuildLoopError
 from utils.logger import get_logger, setup_logging
-from workflows import PRDGenerator
+from workflows import PRDGenerator, PRDToJsonConverter
 
 # Create Typer app
 app = typer.Typer(
@@ -162,6 +162,86 @@ def init(
         raise typer.Exit(1) from None
     except Exception as e:
         logger.error(f"Error during initialization: {e}")
+        console.print(f"\n[red]Error:[/red] {e}")
+        raise typer.Exit(1) from e
+
+
+@app.command()
+def convert(
+    prd_file: Optional[str] = typer.Option(
+        None,
+        "--prd",
+        "-f",
+        help="Path to PRD markdown file (defaults to tasks/prd.md)",
+    ),
+    output: Optional[str] = typer.Option(
+        None,
+        "--output",
+        "-o",
+        help="Output path for prd.json (defaults to prd.json in project root)",
+    ),
+    project_dir: Optional[str] = typer.Option(
+        None,
+        "--project-dir",
+        "-p",
+        help="Project directory (defaults to current directory)",
+    ),
+    verbose: bool = typer.Option(
+        False,
+        "--verbose",
+        "-v",
+        help="Enable verbose output",
+    ),
+) -> None:
+    """Convert PRD markdown to prd.json for the build loop.
+
+    This command converts a PRD markdown file (typically tasks/prd.md) to the
+    prd.json format required by the Ralph build loop.
+    """
+    # Set up logging and config
+    if project_dir:
+        os.environ["MAT_PROJECT_DIR"] = project_dir
+        reload_settings()
+
+    setup_logging(verbose=verbose)
+    settings = get_settings()
+
+    console.print("\n[bold blue]MAT PRD Converter[/bold blue]\n")
+
+    # Determine paths
+    if prd_file:
+        input_path = Path(prd_file)
+    else:
+        input_path = Path(settings.project_dir) / "tasks" / "prd.md"
+
+    if output:
+        output_path = Path(output)
+    else:
+        output_path = Path(settings.project_dir) / "prd.json"
+
+    # Check if input exists
+    if not input_path.exists():
+        console.print(f"[red]Error:[/red] PRD not found at {input_path}")
+        console.print("[dim]Run 'mat init' first to create a PRD[/dim]")
+        raise typer.Exit(1)
+
+    console.print(f"[dim]Input:[/dim] {input_path}")
+    console.print(f"[dim]Output:[/dim] {output_path}")
+
+    try:
+        # Convert PRD to JSON
+        converter = PRDToJsonConverter()
+        prd_json = converter.convert(str(input_path), str(output_path))
+
+        # Display results
+        story_count = len(prd_json.user_stories)
+        console.print(f"\n[green]Converted successfully![/green]")
+        console.print(f"[dim]Project:[/dim] {prd_json.project}")
+        console.print(f"[dim]Branch:[/dim] {prd_json.branch_name}")
+        console.print(f"[dim]Stories:[/dim] {story_count}")
+        console.print(f"\n[dim]Now run 'mat build' to start the autonomous build loop[/dim]")
+
+    except Exception as e:
         console.print(f"\n[red]Error:[/red] {e}")
         raise typer.Exit(1) from e
 
