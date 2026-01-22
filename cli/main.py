@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Optional
 
 import typer
+from openai import OpenAI
 from rich.console import Console
 from rich.table import Table
 
@@ -28,6 +29,48 @@ app = typer.Typer(
 )
 
 console = Console()
+
+
+def _detect_ollama_models(ollama_url: str = "http://localhost:11434") -> list[str]:
+    """Detect available Ollama models."""
+    try:
+        client = OpenAI(base_url=f"{ollama_url}/v1", api_key="ollama")
+        response = client.models.list()
+        return [model.id for model in response.data]
+    except Exception:
+        return []
+
+
+def _create_mat_config(project_dir: Path, model: str, ollama_url: str = "http://localhost:11434") -> Path:
+    """Create .mat-config file in project directory."""
+    config_path = project_dir / ".mat-config"
+    config_content = f"""model={model}
+ollama_url={ollama_url}
+project_dir={project_dir}
+timeout=300
+verbose=false
+max_retries=3
+"""
+    with open(config_path, "w", encoding="utf-8") as f:
+        f.write(config_content)
+    return config_path
+
+
+def _select_model(models: list[str]) -> str:
+    """Let user select a model from available options."""
+    console.print("\n[bold]Available Ollama models:[/bold]")
+    for i, model in enumerate(models, 1):
+        console.print(f"  {i}. {model}")
+
+    while True:
+        try:
+            choice = typer.prompt("\nSelect model number", default="1")
+            idx = int(choice) - 1
+            if 0 <= idx < len(models):
+                return models[idx]
+            console.print("[red]Invalid selection. Try again.[/red]")
+        except ValueError:
+            console.print("[red]Please enter a number.[/red]")
 
 
 def _get_prd_path(project_dir: str | None = None) -> Path:
@@ -78,15 +121,31 @@ def init(
         "-v",
         help="Enable verbose output",
     ),
+    skip_build: bool = typer.Option(
+        False,
+        "--skip-build",
+        help="Skip the build step after PRD generation",
+    ),
+    model: Optional[str] = typer.Option(
+        None,
+        "--model",
+        "-m",
+        help="Ollama model to use (auto-detected if not specified)",
+    ),
 ) -> None:
     """Start a new project with discovery interview.
 
-    This command runs an interactive discovery interview to gather project
-    requirements, then generates a Product Requirements Document (PRD).
-
-    The PRD is saved to tasks/prd.md and can be converted to prd.json for
-    the build loop using the PRDToJsonConverter.
+    This command runs the full MAT workflow:
+    1. Detect and select Ollama model
+    2. Create .mat-config
+    3. Run discovery interview
+    4. Generate PRD
+    5. Convert PRD to prd.json
+    6. Optionally start the build loop
     """
+    # Determine project directory
+    proj_dir = Path(project_dir) if project_dir else Path.cwd()
+
     # Set up logging and config
     if project_dir:
         os.environ["MAT_PROJECT_DIR"] = project_dir
@@ -98,13 +157,43 @@ def init(
     console.print("\n[bold blue]MAT Project Initialization[/bold blue]\n")
 
     try:
-        # Step 1: Get project name first
+        # Step 1: Detect Ollama models
+        console.print("[dim]Detecting Ollama models...[/dim]")
+        models = _detect_ollama_models()
+
+        if not models:
+            console.print("[red]Error:[/red] No Ollama models found.")
+            console.print("[dim]Make sure Ollama is running and has models installed.[/dim]")
+            console.print("[dim]Run: ollama pull codellama[/dim]")
+            raise typer.Exit(1)
+
+        # Step 2: Select model
+        if model and model in models:
+            selected_model = model
+            console.print(f"[dim]Using model:[/dim] {selected_model}")
+        elif model:
+            console.print(f"[yellow]Warning:[/yellow] Model '{model}' not found.")
+            selected_model = _select_model(models)
+        else:
+            selected_model = _select_model(models)
+
+        console.print(f"\n[green]Selected model:[/green] {selected_model}")
+
+        # Step 3: Create .mat-config
+        config_path = _create_mat_config(proj_dir, selected_model)
+        console.print(f"[dim]Created config:[/dim] {config_path}")
+
+        # Reload settings with new config
+        reload_settings()
+
+        # Step 4: Get project name
+        console.print()
         project_name = typer.prompt(
             "What do you want to name this project? (e.g., 'habit-tracker', 'invoice-app')"
         )
         console.print()
 
-        # Step 2: Get initial project description
+        # Step 5: Get initial project description
         console.print(
             "[cyan]Tell me about what you want to build.[/cyan]\n"
             "Describe your idea in a few sentences - what is it, what problem "
@@ -122,13 +211,11 @@ def init(
             "your project better.[/dim]\n"
         )
 
-        # Create PRD generator and start interview with context
+        # Step 6: Run discovery interview
         prd_gen = PRDGenerator()
-
-        # Start the discovery interview
         opening_message = prd_gen.start_discovery()
 
-        # Feed the initial idea as the first response (for the "problem" question)
+        # Feed the initial idea as the first response
         response = prd_gen.process_user_input(initial_idea)
         console.print(f"[cyan]PM Agent:[/cyan] {response}\n")
 
@@ -143,23 +230,61 @@ def init(
             response = prd_gen.process_user_input(user_input)
             console.print(f"\n[cyan]PM Agent:[/cyan] {response}\n")
 
-        # Discovery complete
+        # Step 7: Generate PRD
         console.print("\n[bold]Discovery complete![/bold]")
-
-        # Generate PRD
         console.print("\n[dim]Generating PRD...[/dim]")
         prd = prd_gen.generate_prd(project_name)
         saved_path = prd_gen.save_prd()
 
         console.print(f"\n[green]PRD saved to:[/green] {saved_path}")
         console.print(f"[green]User stories:[/green] {len(prd.user_stories)}")
-        console.print(
-            "\n[dim]Next step: Convert PRD to prd.json and run 'mat build'[/dim]"
-        )
+
+        # Step 8: Convert PRD to prd.json
+        console.print("\n[dim]Converting PRD to prd.json...[/dim]")
+        converter = PRDToJsonConverter()
+        prd_json_path = proj_dir / "prd.json"
+        prd_json = converter.convert(str(saved_path), str(prd_json_path))
+
+        console.print(f"[green]prd.json created:[/green] {prd_json_path}")
+        console.print(f"[dim]Stories ready for build:[/dim] {len(prd_json.user_stories)}")
+
+        # Step 9: Ask about build
+        if skip_build:
+            console.print("\n[dim]Skipping build (--skip-build flag set)[/dim]")
+            console.print("[dim]Run 'mat build' when ready to start the autonomous build loop[/dim]")
+            return
+
+        console.print()
+        start_build = typer.confirm("Start the autonomous build now?", default=True)
+
+        if not start_build:
+            console.print("\n[dim]Run 'mat build' when ready to start the autonomous build loop[/dim]")
+            return
+
+        # Step 10: Run build loop
+        console.print("\n[bold blue]Starting Build Loop[/bold blue]\n")
+        build_loop = BuildLoop(prd_path=prd_json_path, max_retries=3)
+        result = build_loop.run()
+
+        # Display results
+        if result.success:
+            console.print("\n[bold green]Build completed successfully![/bold green]")
+        else:
+            console.print("\n[bold yellow]Build finished with issues.[/bold yellow]")
+
+        console.print(f"[dim]Stories:[/dim] {result.completed_stories}/{result.total_stories} passed")
+
+        if result.failed_story_ids:
+            console.print(f"[red]Failed:[/red] {', '.join(result.failed_story_ids)}")
+
+        if not result.success:
+            raise typer.Exit(1)
 
     except KeyboardInterrupt:
         console.print("\n[yellow]Interrupted.[/yellow]")
         raise typer.Exit(1) from None
+    except typer.Exit:
+        raise
     except Exception as e:
         logger.error(f"Error during initialization: {e}")
         console.print(f"\n[red]Error:[/red] {e}")
