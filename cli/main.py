@@ -41,8 +41,12 @@ def _detect_ollama_models(ollama_url: str = "http://localhost:11434") -> list[st
         return []
 
 
-def _create_mat_config(project_dir: Path, model: str, ollama_url: str = "http://localhost:11434") -> Path:
-    """Create .mat-config file in project directory."""
+def _create_mat_config(project_dir: Path, model: str, ollama_url: str = "http://localhost:11434") -> Path | None:
+    """Create .mat-config file in project directory.
+
+    Returns the config path if successful, None if permission denied.
+    Falls back to environment variables if file cannot be created.
+    """
     config_path = project_dir / ".mat-config"
     config_content = f"""model={model}
 ollama_url={ollama_url}
@@ -51,9 +55,16 @@ timeout=300
 verbose=false
 max_retries=3
 """
-    with open(config_path, "w", encoding="utf-8") as f:
-        f.write(config_content)
-    return config_path
+    try:
+        with open(config_path, "w", encoding="utf-8") as f:
+            f.write(config_content)
+        return config_path
+    except (PermissionError, OSError):
+        # Fall back to environment variables
+        os.environ["MAT_MODEL"] = model
+        os.environ["MAT_OLLAMA_URL"] = ollama_url
+        os.environ["MAT_PROJECT_DIR"] = str(project_dir)
+        return None
 
 
 def _select_model(models: list[str]) -> str:
@@ -179,9 +190,12 @@ def init(
 
         console.print(f"\n[green]Selected model:[/green] {selected_model}")
 
-        # Step 3: Create .mat-config
+        # Step 3: Create .mat-config (or fall back to env vars)
         config_path = _create_mat_config(proj_dir, selected_model)
-        console.print(f"[dim]Created config:[/dim] {config_path}")
+        if config_path:
+            console.print(f"[dim]Created config:[/dim] {config_path}")
+        else:
+            console.print("[dim]Using environment variables for config (no write permission)[/dim]")
 
         # Reload settings with new config
         reload_settings()
