@@ -76,18 +76,22 @@ def setup_logging(verbose: bool | None = None) -> logging.Logger:
     console_handler.setFormatter(console_format)
     logger.addHandler(console_handler)
 
-    # File handler for build.log
-    log_file = _get_log_file_path()
-    log_file.parent.mkdir(parents=True, exist_ok=True)
+    # File handler for build.log (optional - skip if no write permission)
+    try:
+        log_file = _get_log_file_path()
+        log_file.parent.mkdir(parents=True, exist_ok=True)
 
-    _file_handler = logging.FileHandler(log_file, mode="a", encoding="utf-8")
-    _file_handler.setLevel(logging.DEBUG)  # Always log everything to file
-    file_format = logging.Formatter(
-        "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
-        datefmt="%Y-%m-%d %H:%M:%S",
-    )
-    _file_handler.setFormatter(file_format)
-    logger.addHandler(_file_handler)
+        _file_handler = logging.FileHandler(log_file, mode="a", encoding="utf-8")
+        _file_handler.setLevel(logging.DEBUG)  # Always log everything to file
+        file_format = logging.Formatter(
+            "%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+        )
+        _file_handler.setFormatter(file_format)
+        logger.addHandler(_file_handler)
+    except (PermissionError, OSError):
+        # Skip file logging if we can't write to the log file
+        pass
 
     return logger
 
